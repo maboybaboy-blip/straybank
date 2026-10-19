@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CryptoBank — TON</title>
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --card: #151b2b;
+      --card-2: #1c2438;
+      --accent: #0098ea;
+      --accent-2: #00d4ff;
+      --text: #f2f5fa;
+      --muted: #8a94a8;
+      --border: #232c44;
+      --danger: #ff5c5c;
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at 50% 0%, #16213a 0%, var(--bg) 60%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 480px;
+      padding: 20px 16px 40px;
+      position: relative;
+    }
+
+    .screen { display: flex; flex-direction: column; gap: 18px; }
+    .hidden { display: none !important; }
+
+    /* === Connect screen === */
+    .hero { text-align: center; margin-top: 48px; }
+    .logo { font-size: 56px; }
+    .hero h1 { font-size: 30px; margin-top: 12px; letter-spacing: 0.5px; }
+    .subtitle { color: var(--muted); margin-top: 10px; font-size: 15px; line-height: 1.4; }
+    .hint { color: var(--muted); font-size: 12px; text-align: center; margin-top: 16px; }
+    #ton-connect { display: flex; justify-content: center; margin-top: 20px; }
+
+    /* === Topbar === */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .brand { font-weight: 600; font-size: 16px; }
+    .icon-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: 0.15s;
+    }
+    .icon-btn:hover { background: var(--card-2); }
+
+    /* === Balance card === */
+    .balance-card {
+      background: linear-gradient(145deg, var(--card), var(--card-2));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .label { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+    .balance-row { display: flex; align-items: baseline; gap: 8px; }
+    .balance { font-size: 40px; font-weight: 700; line-height: 1; }
+    .unit { color: var(--muted); font-size: 18px; font-weight: 500; }
+    .address-btn {
+      align-self: flex-start;
+      margin-top: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-family: monospace;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      transition: 0.15s;
+    }
+    .address-btn:hover { color: var(--text); background: rgba(255,255,255,0.09); }
+    .copy-icon { font-size: 14px; }
+
+    /* === Actions === */
+    .actions { display: flex; gap: 10px; }
+    .action {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 8px;
+      border-radius: 14px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .action:hover:not(:disabled) { background: var(--card-2); }
+    .action:disabled { opacity: 0.4; cursor: not-allowed; }
+    .action.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border: none;
+      color: #fff;
+      font-weight: 600;
+    }
+    .action-icon { font-size: 20px; line-height: 1; }
+
+    /* === Refresh === */
+    .refresh-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .refresh-btn:hover { background: var(--card); }
+
+    /* === Receive === */
+    .qr-wrap {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      margin-top: 12px;
+    }
+    .full-address {
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--muted);
+      word-break: break-all;
+      text-align: center;
+      padding: 0 8px;
+      line-height: 1.5;
+    }
+
+    /* === Error === */
+    .error {
+      background: rgba(255, 92, 92, 0.1);
+      border: 1px solid rgba(255, 92, 92, 0.3);
+      color: var(--danger);
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    /* === Loader === */
+    .loader {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 15, 26, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      backdrop-filter: blur(4px);
+    }
+    .spinner {
+      width: 42px;
+      height: 42px;
+      border: 3px solid rgba(255,255,255,0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* === Toast === */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--card-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 20px;
+      border-radius: 999px;
+      font-size: 13px;
+      opacity: 0;
+      transition: 0.25s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <!-- Подключение -->
+    <section class="screen" data-screen="connect">
+      <div class="hero">
+        <div class="logo">🏦</div>
+        <h1>CryptoBank</h1>
+        <p class="subtitle">Подключите TON-кошелёк, чтобы видеть реальный баланс</p>
+      </div>
+      <div id="ton-connect"></div>
+      <p class="hint">Tonkeeper · MyTonWallet · Telegram Wallet · OpenMask</p>
+    </section>
+
+    <!-- Dashboard -->
+    <section class="screen hidden" data-screen="dashboard">
+      <div class="topbar">
+        <span class="brand">🏦 CryptoBank</span>
+        <button class="icon-btn" id="disconnect-btn" aria-label="Отключить">✕</button>
+      </div>
+
+      <div class="balance-card">
+        <span class="label">Баланс</span>
+        <div class="balance-row">
+          <span id="balance-value" class="balance">—</span>
+          <span class="unit">TON</span>
+        </div>
+        <button class="address-btn" id="copy-address-btn" title="Скопировать адрес">
+          <span id="wallet-address">UQ…</span>
+          <span class="copy-icon">⧉</span>
+        </button>
+      </div>
+
+      <div class="actions">
+        <button class="action primary" id="receive-btn">
+          <span class="action-icon">↓</span> Получить
+        </button>
+        <button class="action" disabled>
+          <span class="action-icon">↑</span> Отправить
+        </button>
+        <button class="action" disabled>
+          <span class="action-icon">≡</span> История
+        </button>
+      </div>
+
+      <button class="refresh-btn" id="refresh-btn">↻ Обновить баланс</button>
+      <div class="error hidden" id="error-block"></div>
+    </section>
+
+    <!-- Receive -->
+    <section class="screen hidden" data-screen="receive">
+      <div class="topbar">
+        <button class="icon-btn" id="back-btn" aria-label="Назад">←</button>
+        <span class="brand">Получить TON</span>
+        <span style="width:36px"></span>
+      </div>
+      <div class="qr-wrap">
+        <img id="qr-image" alt="QR-код" width="220" height="220" />
+      </div>
+      <p class="full-address" id="full-address"></p>
+      <button class="refresh-btn" id="copy-full-btn">⧉ Скопировать адрес</button>
+    </section>
+
+    <!-- Loader -->
+    <div class="loader hidden" id="loader"><div class="spinner"></div></div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+  </main>
+
+  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+  <script>
+    // ==== КОНФИГ ====
+    // ⚠️ ЗАМЕНИ на свой домен, где будет лежать tonconnect-manifest.json
+    const MANIFEST_URL = 'https://your-domain.com/tonconnect-manifest.json';
+    const TONAPI = 'https://tonapi.io/v2';
+    const REFRESH_MS = 20000;
+
+    // ==== ЭЛЕМЕНТЫ ====
+    const $ = (id) => document.getElementById(id);
+    const screens = {
+      connect: document.querySelector('[data-screen="connect"]'),
+      dashboard: document.querySelector('[data-screen="dashboard"]'),
+      receive: document.querySelector('[data-screen="receive"]'),
+    };
+    const els = {
+      balance: $('balance-value'),
+      address: $('wallet-address'),
+      copyAddr: $('copy-address-btn'),
+      refresh: $('refresh-btn'),
+      disconnect: $('disconnect-btn'),
+      receive: $('receive-btn'),
+      back: $('back-btn'),
+      qr: $('qr-image'),
+      fullAddr: $('full-address'),
+      copyFull: $('copy-full-btn'),
+      error: $('error-block'),
+      loader: $('loader'),
+      toast: $('toast'),
+    };
+
+    // ==== СОСТОЯНИЕ ====
+    let currentAddress = null;
+    let refreshTimer = null;
+    let tonConnectUI = null;
+
+    // ==== УТИЛИТЫ ====
+    function shortAddress(addr) {
+      if (!addr) return '';
+      return addr.slice(0, 4) + '…' + addr.slice(-4);
+    }
+
+    function formatTon(nano) {
+      const ton = Number(nano) / 1e9;
+      return ton.toLocaleString('ru-RU', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 4,
+      });
+    }
+
+    function showScreen(name) {
+      Object.values(screens).forEach(s => s.classList.add('hidden'));
+      screens[name].classList.remove('hidden');
+    }
+
+    function setLoading(on) {
+      els.loader.classList.toggle('hidden', !on);
+    }
+
+    function showError(msg) {
+      els.error.textContent = msg;
+      els.error.classList.remove('hidden');
+    }
+
+    function clearError() {
+      els.error.textContent = '';
+      els.error.classList.add('hidden');
+    }
+
+    function toast(msg) {
+      els.toast.textContent = msg;
+      els.toast.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => els.toast.classList.remove('show'), 1800);
+    }
+
+    async function copy(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        toast('Скопировано');
+      } catch {
+        toast('Не удалось скопировать');
+      }
+    }
+
+    // ==== БАЛАНС ЧЕРЕЗ TONAPI ====
+    async function fetchBalance(address) {
+      const res = await fetch(`${TONAPI}/accounts/${encodeURIComponent(address)}`);
+      if (!res.ok) throw new Error('Ошибка сети TonAPI: ' + res.status);
+      const data = await res.json();
+      return data.balance || 0; // нанотоны
+    }
+
+    async function updateBalance(silent = false) {
+      if (!currentAddress) return;
+      if (!silent) setLoading(true);
+      clearError();
+      try {
+        const nano = await fetchBalance(currentAddress);
+        els.balance.textContent = formatTon(nano);
+      } catch (e) {
+        showError('Не удалось загрузить баланс. Проверьте соединение.');
+        console.error(e);
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    }
+
+    function startAutoRefresh() {
+      stopAutoRefresh();
+      refreshTimer = setInterval(() => updateBalance(true), REFRESH_MS);
+    }
+
+    function stopAutoRefresh() {
+      if (refreshTimer) {
+        clearInterval(refreshTimer);
+        refreshTimer = null;
+      }
+    }
+
+    // ==== ПЕРЕКЛЮЧЕНИЕ НА DASHBOARD ====
+    async function onWalletConnected(address) {
+      currentAddress = address;
+      els.address.textContent = shortAddress(address);
+      els.fullAddr.textContent = address;
+      els.qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(address)}`;
+      showScreen('dashboard');
+      await updateBalance();
+      startAutoRefresh();
+    }
+
+    function onWalletDisconnected() {
+      currentAddress = null;
+      stopAutoRefresh();
+      els.balance.textContent = '—';
+      els.address.textContent = 'UQ…';
+      clearError();
+      showScreen('connect');
+    }
+
+    // ==== ИНИЦИАЛИЗАЦИЯ TON CONNECT ====
+    function initTonConnect() {
+      if (typeof TON_CONNECT_UI === 'undefined') {
+        alert('Не удалось загрузить TON Connect SDK');
+        return;
+      }
+
+      tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+        manifestUrl: MANIFEST_URL,
+        buttonRootId: 'ton-connect',
+      });
+
+      tonConnectUI.onStatusChange(async (wallet) => {
+        if (wallet && wallet.account?.address) {
+          await onWalletConnected(wallet.account.address);
+        } else {
+          onWalletDisconnected();
+        }
+      });
+    }
+
+    // ==== ОБРАБОТЧИКИ ====
+    els.refresh.addEventListener('click', () => updateBalance());
+    els.copyAddr.addEventListener('click', () => currentAddress && copy(currentAddress));
+    els.copyFull.addEventListener('click', () => currentAddress && copy(currentAddress));
+
+    els.disconnect.addEventListener('click', async () => {
+      try {
+        await tonConnectUI.disconnect();
+      } catch (e) {
+        console.error(e);
+      }
+      onWalletDisconnected();
+    });
+
+    els.receive.addEventListener('click', () => {
+      if (!currentAddress) return;
+      els.fullAddr.textContent = currentAddress;
+      showScreen('receive');
+    });
+
+    els.back.addEventListener('click', () => showScreen('dashboard'));
+
+    // ==== СТАРТ ====
+    window.addEventListener('DOMContentLoaded', initTonConnect);
+  </script>
+</body>
+</html>
